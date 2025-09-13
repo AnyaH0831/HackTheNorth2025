@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GroceryMap - Find the Best Grocery Prices Near You</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">
+                    <i class="fas fa-shopping-cart"></i>
+                    GroceryMap
+                </h1>
+                <p class="tagline">Find the best grocery prices near you</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Search Panel -->
+            <div class="search-panel">
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="productSearch" placeholder="Search for products (e.g., milk, bread, apples)">
+                        <button id="searchBtn" class="search-btn">Search</button>
+                    </div>
+                    
+                    <div class="location-info">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span id="locationText">Finding your location...</span>
+                        <button id="locationBtn" class="location-btn">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Price Comparison Results -->
+                <div id="priceResults" class="price-results hidden">
+                    <h3>Price Comparison Results</h3>
+                    <div id="productList" class="product-list"></div>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="map-controls">
+                    <button id="centerMapBtn" class="map-control-btn" title="Center on my location">
+                        <i class="fas fa-location-arrow"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Store Details Modal -->
+        <div id="storeModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="storeModalTitle">Store Details</h2>
+                    <button id="closeModal" class="close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="storeDetails"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner hidden">
+        <div class="spinner"></div>
+        <p>Loading grocery data...</p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
