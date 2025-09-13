@@ -1,14 +1,32 @@
+:root{
+    --sienna: #822300ff;
+    --brown: #8f2600ff;
+    --brown-2: #9d2a00ff;
+    --rust : #A5401Aff;
+    --timberwolf: #dad7cdff;
+    --timberwolf_light: rgb(235, 233, 227);
+    --alabaster: rgb(244, 242, 234);
+    --white-smoke: #f4f4f4ff;
+    --isabelline: #efede7ff;
+    --ash-gray: #C9CFB9ff;
+    --sage: #a3b18aff;
+    --fern-green: #588157ff;
+    --hunter-green: #3a5a40ff;
+    --brunswick-green: #344e41ff;
+    }
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: 'Courier New', Courier, monospace;
 }
 
 body {
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-color: var(--white-smoke);
     min-height: 100vh;
-    color: #333;
+    color: var(--brunswick-green);
 }
 
 .container {
@@ -20,30 +38,103 @@ body {
     flex-direction: column;
 }
 
+/* Navigation Bar Styles */
+.navbar {
+    background-color: var(--brunswick-green);
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-logo {
+    display: flex;
+    align-items: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    text-decoration: none;
+}
+
+.nav-logo i {
+    margin-right: 10px;
+    color: var(--brown);
+    font-size: 2rem;
+}
+
+.nav-menu {
+    display: flex;
+}
+
+.nav-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 30px;
+}
+
+.nav-item {
+    display: flex;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 8px 16px;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: var(--brown);
+    transform: translateX(-50%);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+    width: 80%;
+}
+
+.nav-link:hover {
+    color: var(--timberwolf);
+}
+
+.nav-link.active::after {
+    width: 80%;
+}
+
+.nav-link.active {
+    color: var(--timberwolf);
+}
+
 /* Header Styles */
 .header {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
-    padding: 20px 30px;
+    background-color: var(--white-smoke);
     margin-bottom: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding-top: 10px;
 }
 
 .header-content {
     text-align: center;
-}
-
-.logo {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #4f46e5;
-    margin-bottom: 5px;
-}
-
-.logo i {
-    margin-right: 10px;
-    color: #10b981;
 }
 
 .tagline {
@@ -63,7 +154,7 @@ body {
 /* Search Panel */
 .search-panel {
     width: 400px;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--sage);
     backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 25px;
@@ -83,7 +174,9 @@ body {
     position: relative;
     display: flex;
     align-items: center;
-    background: #f8fafc;
+    /* background: #f8fafc;
+     */
+    background:var(--white-smoke);
     border: 2px solid #e2e8f0;
     border-radius: 12px;
     padding: 12px 15px;
@@ -114,7 +207,7 @@ body {
 }
 
 .search-btn {
-    background: #4f46e5;
+    background: var(--brown);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -126,7 +219,7 @@ body {
 }
 
 .search-btn:hover {
-    background: #4338ca;
+    background: var(--rust);
     transform: translateY(-1px);
 }
 
@@ -134,19 +227,20 @@ body {
     display: flex;
     align-items: center;
     padding: 12px 15px;
-    background: #f1f5f9;
+    /* background: #f1f5f9; */
+    background:var(--white-smoke);
     border-radius: 10px;
     font-size: 0.9rem;
     color: #475569;
 }
 
 .location-info i {
-    color: #ef4444;
+    color:var(--rust);
     margin-right: 8px;
 }
 
 .location-btn {
-    background: #10b981;
+    background: var(--ash-gray);
     color: white;
     border: none;
     padding: 6px 8px;
@@ -157,7 +251,7 @@ body {
 }
 
 .location-btn:hover {
-    background: #059669;
+    background: var(--fern-green);
     transform: scale(1.05);
 }
 
