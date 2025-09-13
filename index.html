@@ -10,31 +10,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <i class="fas fa-shopping-cart"></i>
-                <span>GroceryAI</span>
-            </div>
-            <div class="nav-menu">
-                <ul class="nav-list">
-                    <li class="nav-item"><a href="#" class="nav-link active">Home</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link">Stores</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link">About</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link">Contact</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
     <div class="container">
-        <!-- Header with tagline -->
-        <!-- <header class="header">
+        <!-- Header -->
+        <header class="header">
             <div class="header-content">
+                <h1 class="logo">
+                    <i class="fas fa-shopping-cart"></i>
+                    GroceryMap
+                </h1>
                 <p class="tagline">Find the best grocery prices near you</p>
             </div>
-        </header> -->
+        </header>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -56,11 +42,28 @@
                     </div>
                 </div>
 
+                <!-- Grocery List Section -->
+                <div class="grocery-list-section">
+                    <h3>My Grocery List</h3>
+                    <div class="grocery-input">
+                        <input type="text" id="groceryItem" placeholder="Add item to your list...">
+                        <button id="addItemBtn" class="add-item-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div id="groceryList" class="grocery-items"></div>
+                    <button id="optimizeBtn" class="optimize-btn hidden">
+                        <i class="fas fa-magic"></i>
+                        Find Best Shopping Plan
+                    </button>
+                </div>
+
                 <!-- Price Comparison Results -->
                 <div id="priceResults" class="price-results hidden">
                     <h3>Price Comparison Results</h3>
                     <div id="productList" class="product-list"></div>
                 </div>
+
             </div>
 
             <!-- Map Container -->
@@ -70,6 +73,20 @@
                     <button id="centerMapBtn" class="map-control-btn" title="Center on my location">
                         <i class="fas fa-location-arrow"></i>
                     </button>
+                </div>
+            </div>
+
+            <!-- Shopping Recommendations -->
+            <div class="shopping-recommendations" id="shoppingRecommendations" style="display: none;">
+                <div class="recommendations-header">
+                    <h3>AI Shopping Recommendations</h3>
+                    <button class="expand-toggle" id="expandToggle">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                        Expand
+                    </button>
+                </div>
+                <div class="recommendations-list" id="recommendationsList">
+                    <!-- Recommendations will be populated here -->
                 </div>
             </div>
         </main>
@@ -86,6 +103,28 @@
                 <div class="modal-body">
                     <div id="storeDetails"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- AI Chatbot -->
+        <div id="chatbot" class="chatbot">
+            <div class="chatbot-header">
+                <h3><i class="fas fa-robot"></i> Grocery Assistant</h3>
+                <button id="toggleChat" class="toggle-chat-btn">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div id="chatMessages" class="chat-messages">
+                <div class="chat-message bot-message">
+                    <i class="fas fa-robot"></i>
+                    <p>Hi! I'm your grocery shopping assistant. Add items to your list and I'll help you find the best deals and optimal shopping plan!</p>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="Ask about groceries, prices, or shopping tips...">
+                <button id="sendChatBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
             </div>
         </div>
     </div>
