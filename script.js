@@ -4,13 +4,14 @@ let userLocation = null;
 let groceryStores = [];
 let currentSearchResults = [];
 let groceryList = [];
-let chatbotMinimized = false;
+let chatbotMinimized = true;
+let currentRecommendations = [];
 
 // API configuration
 const BACKEND_API_URL = 'http://localhost:3001/api';
 
 // Gemini API configuration - Replace with your actual API key
-const GEMINI_API_KEY = 'AIzaSyAHX7Zus69ppfJxMwiHJjkpzKphmyEBkAk';
+const GEMINI_API_KEY = 'AIzaSyBkZ8jTIC3oSgJ95gLckqiL5ayNkD4SS9s';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 // Typical quantities for common grocery items (fallback data)
@@ -183,10 +184,14 @@ async function searchProducts(query) {
 
 async function initializeApp() {
     await initializeMap();
-    await getUserLocation();
+    // Note: getUserLocation() removed from automatic initialization
+    // Users can manually click the location button to get their location
     await loadStoreData(); // Changed from loadRealStoreData to loadStoreData
     setupEventListeners();
     initializeChatbot();
+    
+    // Initialize recommendations section with placeholder
+    showRecommendationsPlaceholder();
     
     // Add store markers to map
     groceryStores.forEach(store => {
@@ -1101,7 +1106,8 @@ function removeGroceryItem(itemId) {
         // Hide optimize button if list is empty
         if (groceryList.length === 0) {
             document.getElementById('optimizeBtn').classList.add('hidden');
-            document.getElementById('shoppingRecommendations').classList.add('hidden');
+            // Show placeholder message in recommendations but keep section visible
+            showRecommendationsPlaceholder();
         }
     }
 }
@@ -1194,7 +1200,7 @@ async function calculateOptimalShopping() {
             const storeProduct = findMatchingProduct(store, groceryItem.name);
             
             if (storeProduct) {
-                const itemCost = storeProduct.price * groceryItem.quantity;
+                const itemCost = storeProduct.price; // Just use single product price, no quantity multiplication
                 totalCost += itemCost;
                 availableItems.push({
                     name: groceryItem.name,
@@ -1222,27 +1228,61 @@ async function calculateOptimalShopping() {
         });
     }
     
-    // Sort by total cost (lowest first), then by completeness (highest first)
+    // Sort by total cost (lowest first), but prioritize stores with at least some items
     storeRecommendations.sort((a, b) => {
-        if (a.completeness !== b.completeness) {
-            return b.completeness - a.completeness;
+        // If both stores have items, sort by lowest cost first
+        if (a.availableItems.length > 0 && b.availableItems.length > 0) {
+            return a.totalCost - b.totalCost;
         }
-        return a.totalCost - b.totalCost;
+        // If only one store has items, prioritize it
+        if (a.availableItems.length > 0 && b.availableItems.length === 0) {
+            return -1;
+        }
+        if (b.availableItems.length > 0 && a.availableItems.length === 0) {
+            return 1;
+        }
+        // If neither store has items, sort by completeness (shouldn't happen but just in case)
+        return b.completeness - a.completeness;
     });
+    
+    // Debug log to see the sorted recommendations
+    console.log('Shopping recommendations (sorted by cheapest first):', 
+        storeRecommendations.map(rec => ({
+            store: rec.store.name,
+            totalCost: rec.totalCost,
+            itemsAvailable: rec.availableItems.length,
+            completeness: rec.completeness
+        }))
+    );
     
     return storeRecommendations;
 }
 
 function findMatchingProduct(store, itemName) {
+    if (!store || !store.products || !itemName) {
+        return null;
+    }
+    
+    const normalizeString = (str) => str.toLowerCase().trim();
+    const normalizedItemName = normalizeString(itemName);
+    
     // Direct match
     if (store.products[itemName]) {
         return store.products[itemName];
     }
     
-    // Fuzzy matching for similar items
+    // Case-insensitive direct match
     const productKeys = Object.keys(store.products);
     for (const key of productKeys) {
-        if (key.includes(itemName) || itemName.includes(key)) {
+        if (normalizeString(key) === normalizedItemName) {
+            return store.products[key];
+        }
+    }
+    
+    // Fuzzy matching for similar items
+    for (const key of productKeys) {
+        const normalizedKey = normalizeString(key);
+        if (normalizedKey.includes(normalizedItemName) || normalizedItemName.includes(normalizedKey)) {
             return store.products[key];
         }
     }
@@ -1251,9 +1291,18 @@ function findMatchingProduct(store, itemName) {
 }
 
 function displayShoppingRecommendations(recommendations) {
-    const recommendationsDiv = document.getElementById('shoppingRecommendations');
     const recommendationsList = document.getElementById('recommendationsList');
+    const noRecommendations = document.getElementById('noRecommendations');
     
+    // Store recommendations globally for modal access
+    currentRecommendations = recommendations;
+    
+    // Hide the placeholder message
+    if (noRecommendations) {
+        noRecommendations.style.display = 'none';
+    }
+    
+    // Clear existing recommendations
     recommendationsList.innerHTML = '';
     
     recommendations.forEach((rec, index) => {
@@ -1267,10 +1316,13 @@ function displayShoppingRecommendations(recommendations) {
         
         card.innerHTML = `
             <div class="store-header">
-                <h4>${rec.store.name}</h4>
+                <h4>${rec.store.name}${index === 0 && rec.availableItems.length > 0 ? ' 🏆' : ''}</h4>
                 <div class="store-stats">
                     <span class="completeness">${availableItems.length}/${totalItems} items available</span>
-                    <span class="total-cost">Total: $${rec.totalCost.toFixed(2)}</span>
+                    ${rec.availableItems.length > 0 ? 
+                        `<span class="total-cost ${index === 0 ? 'best-price' : ''}">Total: $${rec.totalCost.toFixed(2)}</span>` :
+                        `<span class="no-items">No items available</span>`
+                    }
                 </div>
             </div>
             <div class="items-breakdown">
@@ -1285,7 +1337,7 @@ function displayShoppingRecommendations(recommendations) {
                     </div>
                 ` : ''}
             </div>
-            <button class="view-store-btn" onclick="openStoreModal('${rec.store.id}')">
+            <button class="view-store-btn" onclick="viewStoreDetailsFromRecommendation(${index})">
                 <i class="fas fa-store"></i> View Store Details
             </button>
         `;
@@ -1293,27 +1345,70 @@ function displayShoppingRecommendations(recommendations) {
         recommendationsList.appendChild(card);
     });
     
-    recommendationsDiv.style.display = 'block';
-    
-    // Setup expand toggle functionality
-    setupExpandToggle();
+    // Note: Section is now always visible, no need to control display
 }
 
-function setupExpandToggle() {
-    const expandToggle = document.getElementById('expandToggle');
-    const recommendationsDiv = document.getElementById('shoppingRecommendations');
+function showRecommendationsPlaceholder() {
+    const recommendationsList = document.getElementById('recommendationsList');
+    const noRecommendations = document.getElementById('noRecommendations');
     
-    expandToggle.onclick = function() {
-        const isExpanded = recommendationsDiv.classList.contains('expanded');
-        
-        if (isExpanded) {
-            recommendationsDiv.classList.remove('expanded');
-            expandToggle.innerHTML = '<i class="fas fa-expand-arrows-alt"></i> Expand';
-        } else {
-            recommendationsDiv.classList.add('expanded');
-            expandToggle.innerHTML = '<i class="fas fa-compress-arrows-alt"></i> Collapse';
-        }
-    };
+    // Clear any existing recommendations
+    recommendationsList.innerHTML = '';
+    
+    // Show the placeholder message
+    if (noRecommendations) {
+        noRecommendations.style.display = 'block';
+    }
+    
+    // Clear stored recommendations
+    currentRecommendations = [];
+}
+
+// Expand toggle function removed since button was removed from UI
+// function setupExpandToggle() { ... }
+
+// View store details from AI recommendations with grocery list context
+function viewStoreDetailsFromRecommendation(recommendationIndex) {
+    if (!currentRecommendations[recommendationIndex]) {
+        console.error('Recommendation not found:', recommendationIndex);
+        return;
+    }
+    
+    const recommendation = currentRecommendations[recommendationIndex];
+    const store = recommendation.store;
+    
+    // Prepare grocery list items for this store using the recommendation data
+    const storeItems = [];
+    
+    // Add available items from recommendation
+    recommendation.availableItems.forEach(item => {
+        storeItems.push({
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+            product: item.product,
+            totalPrice: item.totalPrice,
+            available: true
+        });
+    });
+    
+    // Add missing items from recommendation
+    recommendation.missingItems.forEach(item => {
+        storeItems.push({
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+            available: false
+        });
+    });
+    
+    // Highlight store on map if available
+    if (store._id || store.id) {
+        highlightStore(store._id || store.id);
+    }
+    
+    // Show modal with grocery list context
+    showStoreModal(store, storeItems);
 }
 
 // Chatbot Functions
