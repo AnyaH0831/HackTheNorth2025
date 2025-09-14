@@ -6,6 +6,9 @@ let currentSearchResults = [];
 let groceryList = [];
 let chatbotMinimized = false;
 
+// API configuration
+const BACKEND_API_URL = 'http://localhost:3001/api';
+
 // Gemini API configuration - Replace with your actual API key
 const GEMINI_API_KEY = 'AIzaSyAHX7Zus69ppfJxMwiHJjkpzKphmyEBkAk';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
@@ -99,15 +102,89 @@ const sampleGroceryData = {
                 "eggs": { name: "Large Eggs (12ct)", price: 5.49, brand: "Free Range" },
                 "chicken": { name: "Chicken Breast (1lb)", price: 10.99, brand: "Premium" }
             }
+        },
+        {
+            id: 5,
+            name: "Costco Wholesale",
+            lat: 43.4889,
+            lng: -80.5243,
+            address: "1200 Weber St N, Waterloo, ON",
+            phone: "(519) 888-2678",
+            hours: "10:00 AM - 8:00 PM",
+            products: {
+                "milk": { name: "Organic Milk 2L", price: 6.99, brand: "Kirkland" },
+                "bread": { name: "Artisan Rolls (12-pack)", price: 4.49, brand: "Kirkland" },
+                "apples": { name: "Gala Apples (3lb)", price: 4.99, brand: "Fresh" },
+                "bananas": { name: "Bananas (3lb)", price: 2.49, brand: "Fresh" },
+                "eggs": { name: "Large Eggs (18-pack)", price: 6.99, brand: "Kirkland" },
+                "chicken": { name: "Chicken Breast (2lb)", price: 12.99, brand: "Fresh" }
+            }
         }
     ]
 };
 
 // Initialize the application
+// Backend API functions
+async function fetchStores() {
+    try {
+        console.log('Fetching stores from backend API...');
+        const response = await fetch(`${BACKEND_API_URL}/stores`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const stores = await response.json();
+        console.log('Stores fetched successfully:', stores.length, 'stores');
+        return stores;
+    } catch (error) {
+        console.error('Error fetching stores:', error);
+        console.log('Falling back to sample data');
+        return sampleGroceryData.stores;
+    }
+}
+
+async function fetchProducts(storeId = null) {
+    try {
+        console.log('Fetching products from backend API...');
+        const url = storeId ? `${BACKEND_API_URL}/products?storeId=${storeId}` : `${BACKEND_API_URL}/products`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const products = await response.json();
+        console.log('Products fetched successfully:', products.length, 'products');
+        return products;
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        return [];
+    }
+}
+
+async function searchProducts(query) {
+    try {
+        console.log('Searching products for:', query);
+        const response = await fetch(`${BACKEND_API_URL}/search?q=${encodeURIComponent(query)}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const results = await response.json();
+        console.log('Search results:', results.length, 'products found');
+        return results;
+    } catch (error) {
+        console.error('Error searching products:', error);
+        return [];
+    }
+}
+
 async function initializeApp() {
     await initializeMap();
     await getUserLocation();
-    await loadRealStoreData();
+    await loadStoreData(); // Changed from loadRealStoreData to loadStoreData
     setupEventListeners();
     initializeChatbot();
     
@@ -115,6 +192,21 @@ async function initializeApp() {
     groceryStores.forEach(store => {
         addStoreMarker(store);
     });
+}
+
+// Load store data from backend API with fallback
+async function loadStoreData() {
+    try {
+        console.log('Loading store data...');
+        const stores = await fetchStores();
+        groceryStores = stores;
+        console.log('Store data loaded:', groceryStores.length, 'stores');
+    } catch (error) {
+        console.error('Error loading store data:', error);
+        // Fallback to sample data
+        groceryStores = sampleGroceryData.stores;
+        console.log('Using fallback sample data');
+    }
 }
 
 // Load real store data from APIs
@@ -394,47 +486,255 @@ function setupEventListeners() {
 // Get user's current location
 function getUserLocation() {
     const locationText = document.getElementById('locationText');
-    locationText.textContent = 'Getting your location...';
     
-    if (navigator.geolocation) {
+    console.log('getUserLocation called, locationText element:', locationText); // Debug
+    
+    if (locationText) {
+        locationText.textContent = 'Getting your location...';
+        console.log('Set location text to "Getting your location..."'); // Debug
+    }
+    
+    if ('geolocation' in navigator) {
+        console.log('Geolocation is supported, requesting position...'); // Debug
         navigator.geolocation.getCurrentPosition(
-            function(position) {
+            async position => {
+                console.log('Position received:', position.coords); // Debug
                 userLocation = {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 };
                 
-                // Update location text
-                locationText.textContent = `Location found (${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)})`;
+                // Get address from coordinates using reverse geocoding
+                try {
+                    console.log('Starting reverse geocoding...'); // Debug
+                    const address = await reverseGeocode(userLocation.lat, userLocation.lng);
+                    console.log('Geocoding result:', address); // Debug
+                    if (locationText) {
+                        locationText.textContent = address;
+                        console.log('Updated location text to:', address); // Debug
+                    }
+                    
+                    // Add user marker to map with address
+                    if (map) {
+                        L.marker([userLocation.lat, userLocation.lng], {
+                            icon: L.divIcon({
+                                className: 'user-location-marker',
+                                html: '<i class="fas fa-map-marker-alt" style="color: #8f2600ff; font-size: 20px;"></i>',
+                                iconSize: [25, 25],
+                                iconAnchor: [12, 20]
+                            })
+                        })
+                            .addTo(map)
+                            .bindPopup(`<div class="user-location-popup">
+                                <h4><i class="fas fa-map-marker-alt"></i> Your Location</h4>
+                                <p>${address}</p>
+                            </div>`)
+                            .openPopup();
+                    }
+                } catch (error) {
+                    console.error('Reverse geocoding error:', error);
+                    if (locationText) {
+                        locationText.textContent = 'Location found';
+                        console.log('Geocoding failed, set to "Location found"'); // Debug
+                    }
+                    
+                    // Add user marker to map with fallback text
+                    if (map) {
+                        L.marker([userLocation.lat, userLocation.lng], {
+                            icon: L.divIcon({
+                                className: 'user-location-marker',
+                                html: '<i class="fas fa-map-marker-alt" style="color: #8f2600ff; font-size: 20px;"></i>',
+                                iconSize: [25, 25],
+                                iconAnchor: [12, 20]
+                            })
+                        })
+                            .addTo(map)
+                            .bindPopup('Your location')
+                            .openPopup();
+                    }
+                }
                 
                 // Center map on user location
                 map.setView([userLocation.lat, userLocation.lng], 14);
                 
-                // Add user location marker
-                if (window.userMarker) {
-                    map.removeLayer(window.userMarker);
-                }
-                
-                window.userMarker = L.marker([userLocation.lat, userLocation.lng], {
-                    icon: L.divIcon({
-                        className: 'user-location-marker',
-                        html: '<i class="fas fa-user" style="color: #4f46e5; font-size: 20px;"></i>',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    })
-                }).addTo(map).bindPopup('Your Location');
-                
                 // Recalculate distances
                 updateStoreDistances();
             },
-            function(error) {
+            error => {
                 console.error('Geolocation error:', error);
-                locationText.textContent = 'Location access denied - using default area';
+                if (locationText) {
+                    locationText.textContent = 'Location unavailable';
+                    console.log('Geolocation failed, set to "Location unavailable"'); // Debug
+                }
             }
         );
     } else {
-        locationText.textContent = 'Geolocation not supported - using default area';
+        console.log('Geolocation not supported'); // Debug
+        if (locationText) {
+            locationText.textContent = 'Geolocation not supported';
+        }
     }
+}
+
+// Reverse geocode coordinates to get address
+async function reverseGeocode(lat, lng) {
+    try {
+        console.log(`Starting reverse geocoding for ${lat}, ${lng}`); // Debug
+        
+        // Try different zoom levels to get the best address information
+        const zoomLevels = [18, 16, 14]; // High to low precision
+        let bestResult = null;
+        let bestScore = 0;
+        
+        for (const zoom of zoomLevels) {
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=${zoom}&accept-language=en`;
+                console.log(`Trying zoom level ${zoom}:`, url); // Debug
+                
+                const response = await fetch(url);
+                console.log(`Zoom ${zoom} response status:`, response.status); // Debug
+                
+                if (!response.ok) {
+                    console.log(`Zoom ${zoom} failed with status ${response.status}`);
+                    continue;
+                }
+                
+                const data = await response.json();
+                console.log(`Zoom ${zoom} raw data:`, data); // Debug
+                
+                if (!data || !data.address) {
+                    console.log(`Zoom ${zoom} has no address data`);
+                    continue;
+                }
+                
+                // Score this result based on completeness
+                const score = scoreAddressDetails(data.address);
+                console.log(`Zoom ${zoom} score: ${score}`);
+                
+                if (score > bestScore) {
+                    bestResult = data;
+                    bestScore = score;
+                    console.log(`Zoom ${zoom} is now the best result`);
+                }
+                
+                // If we found a complete address, we can stop
+                if (score >= 100) {
+                    console.log(`Zoom ${zoom} has complete address, stopping search`);
+                    break;
+                }
+                
+            } catch (error) {
+                console.warn(`Zoom level ${zoom} failed:`, error);
+                continue;
+            }
+        }
+        
+        if (!bestResult) {
+            throw new Error('All geocoding attempts failed');
+        }
+        
+        console.log('Best geocoding result:', bestResult);
+        
+        const address = bestResult.address;
+        console.log('Address object:', address); // Debug
+        console.log('Available address fields:', Object.keys(address)); // Debug
+        
+        // Simple address building
+        const parts = [];
+        
+        // Add street address with better logic
+        const streetParts = [];
+        
+        // House number
+        if (address.house_number) {
+            streetParts.push(address.house_number);
+            console.log('Added house number:', address.house_number);
+        }
+        
+        // Street name - try all possible fields
+        const streetName = address.road || address.street || address.pedestrian || address.footway || address.cycleway;
+        if (streetName) {
+            streetParts.push(streetName);
+            console.log('Added street name:', streetName);
+        } else {
+            console.log('No street name found in any field');
+        }
+        
+        if (streetParts.length > 0) {
+            const fullStreet = streetParts.join(' ');
+            parts.push(fullStreet);
+            console.log('Full street address:', fullStreet);
+        }
+        
+        // Add city with better detection
+        const cityOptions = [
+            address.city,
+            address.town, 
+            address.municipality,
+            address.village,
+            address.hamlet,
+            address.city_district,
+            address.district,
+            address.county
+        ].filter(c => c); // Remove null/undefined
+        
+        console.log('City options available:', cityOptions);
+        
+        const city = cityOptions[0]; // Take the first available option
+        if (city) {
+            parts.push(city);
+            console.log('Selected city:', city);
+        } else {
+            console.log('No city found');
+        }
+        
+        // Add state/province
+        if (address.state || address.province) {
+            const state = address.state || address.province;
+            console.log('Found state/province:', state);
+            if (address.postcode) {
+                parts.push(`${state} ${address.postcode}`);
+                console.log('Added state with postal code:', `${state} ${address.postcode}`);
+            } else {
+                parts.push(state);
+                console.log('Added state without postal code:', state);
+            }
+        }
+        
+        // Add country as last resort
+        if (parts.length === 0 && address.country) {
+            parts.push(address.country);
+            console.log('Added country as fallback:', address.country);
+        }
+        
+        const result = parts.length > 0 ? parts.join(', ') : bestResult.display_name || 'Location found';
+        console.log('Final address result:', result);
+        
+        return result || 'Location found';
+        
+    } catch (error) {
+        console.error('Reverse geocoding failed:', error);
+        throw error; // Re-throw to trigger fallback in caller
+    }
+}
+
+// Score address based on completeness
+function scoreAddressDetails(address) {
+    let score = 0;
+    
+    // Street information (high value)
+    if (address.house_number) score += 40;
+    if (address.road || address.street) score += 40;
+    
+    // City information (medium value)
+    if (address.city || address.town || address.municipality) score += 15;
+    
+    // Regional information (low value)
+    if (address.state || address.province) score += 3;
+    if (address.country) score += 2;
+    
+    console.log('Address completeness score:', score, 'for address:', address);
+    return score;
 }
 
 // Add store marker to map with icon
@@ -442,7 +742,7 @@ function addStoreMarker(store) {
     const marker = L.marker([store.lat, store.lng], {
         icon: L.divIcon({
             className: 'store-marker',
-            html: '<i class="fas fa-store" style="color: #10b981; font-size: 18px;"></i>',
+            html: '<i class="fas fa-store" style="color: #344e41ff; font-size: 18px;"></i>',
             iconSize: [25, 25],
             iconAnchor: [12, 12]
         })
@@ -468,7 +768,7 @@ function createStorePopupContent(store) {
             <p><i class="fas fa-phone"></i> ${store.phone}</p>
             <p><i class="fas fa-clock"></i> ${store.hours}</p>
             ${store.distance ? `<p><i class="fas fa-route"></i> ${store.distance} km away</p>` : ''}
-            <div class="price-highlight">Click for detailed prices</div>
+            <div class="price-highlight" onclick="openStoreModal('${store._id || store.id}')">Click for detailed prices</div>
         </div>
     `;
 }
@@ -717,6 +1017,16 @@ function viewStoreDetails(storeId) {
     
     // Show modal with grocery list context
     showStoreModal(store, storeItems);
+}
+
+// Open store modal by store ID
+function openStoreModal(storeId) {
+    const store = groceryStores.find(s => (s._id || s.id) === storeId || (s._id || s.id).toString() === storeId.toString());
+    if (store) {
+        showStoreModal(store, []);
+    } else {
+        console.error('Store not found:', storeId);
+    }
 }
 
 // Close store modal

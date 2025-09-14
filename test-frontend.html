@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .result {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Frontend Functionality Test</h1>
+    
+    <div class="test-section">
+        <h3>1. API Connection Test</h3>
+        <div id="api-test">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Global Variables Test</h3>
+        <div id="variables-test">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Function Availability Test</h3>
+        <div id="functions-test">Testing...</div>
+    </div>
+    
+    <script src="frontend-api.js"></script>
+    <script>
+        // Test API connection
+        async function testAPI() {
+            try {
+                const stores = await api.getStores();
+                document.getElementById('api-test').innerHTML = 
+                    `<span class="result">✅ API Working - Found ${stores.length} stores</span>`;
+            } catch (error) {
+                document.getElementById('api-test').innerHTML = 
+                    `<span class="error">❌ API Error: ${error.message}</span>`;
+            }
+        }
+        
+        // Test global variables
+        function testVariables() {
+            const variables = ['map', 'groceryStores', 'groceryList', 'chatbotMinimized'];
+            const results = variables.map(variable => {
+                const exists = typeof window[variable] !== 'undefined';
+                return `${variable}: ${exists ? '✅' : '❌'}`;
+            });
+            document.getElementById('variables-test').innerHTML = results.join('<br>');
+        }
+        
+        // Test functions
+        function testFunctions() {
+            const functions = ['toggleChatbot', 'addGroceryItem', 'removeGroceryItem', 'showStoreDetails'];
+            const results = functions.map(func => {
+                const exists = typeof window[func] === 'function';
+                return `${func}: ${exists ? '✅' : '❌'}`;
+            });
+            document.getElementById('functions-test').innerHTML = results.join('<br>');
+        }
+        
+        // Run tests after page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                testAPI();
+                testVariables();
+                testFunctions();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

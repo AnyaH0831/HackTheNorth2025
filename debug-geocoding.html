@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geocoding Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .json-display {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .address-result {
+            background: #dcfce7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .error {
+            background: #fecaca;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <h1>Geocoding Debug Tool</h1>
+    
+    <div class="debug-section">
+        <h3>Location Testing</h3>
+        <button onclick="getCurrentLocationAndTest()">Get My Location & Test Geocoding</button>
+        <button onclick="testSpecificLocation()">Test Waterloo, ON Location</button>
+        <div id="location-status"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Current Location:</h3>
+        <div id="current-coords"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Raw Geocoding Response:</h3>
+        <div id="raw-response" class="json-display"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Address Components:</h3>
+        <div id="address-components" class="json-display"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Formatted Address (Full):</h3>
+        <div id="formatted-address" class="address-result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Simplified Address:</h3>
+        <div id="simplified-address" class="address-result"></div>
+    </div>
+
+    <script>
+        async function getCurrentLocationAndTest() {
+            const statusDiv = document.getElementById('location-status');
+            statusDiv.innerHTML = 'Getting your location...';
+            
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    async position => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        document.getElementById('current-coords').innerHTML = 
+                            `Latitude: ${lat}<br>Longitude: ${lng}`;
+                        
+                        await testGeocodingAtLocation(lat, lng);
+                        statusDiv.innerHTML = 'Location found and tested!';
+                    },
+                    error => {
+                        statusDiv.innerHTML = `Error: ${error.message}`;
+                    }
+                );
+            } else {
+                statusDiv.innerHTML = 'Geolocation not supported';
+            }
+        }
+        
+        async function testSpecificLocation() {
+            // Test with University of Waterloo coordinates
+            const lat = 43.4723;
+            const lng = -80.5449;
+            
+            document.getElementById('current-coords').innerHTML = 
+                `Test Location - Latitude: ${lat}<br>Longitude: ${lng}`;
+            
+            await testGeocodingAtLocation(lat, lng);
+            document.getElementById('location-status').innerHTML = 'Test location geocoded!';
+        }
+        
+        async function testGeocodingAtLocation(lat, lng) {
+            try {
+                // Test multiple zoom levels and parameters with English language preference
+                const tests = [
+                    { zoom: 18, addressdetails: 1, extratags: 1, 'accept-language': 'en', namedetails: 1 },
+                    { zoom: 16, addressdetails: 1, 'accept-language': 'en', namedetails: 1 },
+                    { zoom: 18, addressdetails: 1, 'accept-language': 'en' },
+                    { zoom: 16, addressdetails: 1, namedetails: 1 },
+                    { zoom: 18, addressdetails: 1, extratags: 1 },
+                    { zoom: 16, addressdetails: 1 }
+                ];
+                
+                let bestResult = null;
+                let allResults = [];
+                
+                for (let i = 0; i < tests.length; i++) {
+                    const params = tests[i];
+                    const paramString = Object.entries(params)
+                        .map(([key, value]) => `${key}=${value}`)
+                        .join('&');
+                    
+                    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&${paramString}`;
+                    
+                    try {
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        
+                        allResults.push({
+                            test: `Test ${i + 1} (${paramString})`,
+                            data: data
+                        });
+                        
+                        if (data && data.address && (!bestResult || hasMoreAddressInfo(data, bestResult))) {
+                            bestResult = data;
+                        }
+                    } catch (error) {
+                        console.error(`Test ${i + 1} failed:`, error);
+                    }
+                }
+                
+                // Display results
+                document.getElementById('raw-response').textContent = 
+                    JSON.stringify(allResults, null, 2);
+                
+                if (bestResult && bestResult.address) {
+                    window.lastBestResult = bestResult; // Store for displayAddressComponents
+                    displayAddressComponents(bestResult.address);
+                    const formattedAddress = formatAddress(bestResult.address, bestResult.namedetails);
+                    const simplifiedAddress = formatSimplifiedAddress(bestResult.address, bestResult.namedetails);
+                    document.getElementById('formatted-address').innerHTML = formattedAddress;
+                    document.getElementById('simplified-address').innerHTML = simplifiedAddress;
+                } else {
+                    document.getElementById('address-components').textContent = 'No address data received';
+                    document.getElementById('formatted-address').innerHTML = 'Failed to get address';
+                }
+                
+            } catch (error) {
+                document.getElementById('raw-response').textContent = `Error: ${error.message}`;
+                document.getElementById('formatted-address').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function hasMoreAddressInfo(data1, data2) {
+            if (!data1.address || !data2.address) return false;
+            
+            const countFields = (addr) => {
+                return Object.keys(addr).filter(key => 
+                    ['house_number', 'road', 'street', 'city', 'town', 'village', 'neighbourhood', 'suburb'].includes(key)
+                ).length;
+            };
+            
+            return countFields(data1.address) > countFields(data2.address);
+        }
+        
+        function displayAddressComponents(address) {
+            const components = {
+                'House Number': address.house_number,
+                'Road/Street': address.road || address.street || address.pedestrian,
+                'Neighbourhood': address.neighbourhood,
+                'Suburb': address.suburb,
+                'City': address.city,
+                'Town': address.town,
+                'Municipality': address.municipality,
+                'Village': address.village,
+                'City District': address.city_district,
+                'District': address.district,
+                'County': address.county,
+                'State/Province': address.state || address.province,
+                'Postcode': address.postcode,
+                'Country': address.country,
+                'Country Code': address.country_code
+            };
+            
+            let html = '<h4>Address Components:</h4>';
+            for (const [label, value] of Object.entries(components)) {
+                if (value) {
+                    // Check if value contains non-Latin characters
+                    const hasNonLatin = /[^\x00-\x7F]/.test(value);
+                    const style = hasNonLatin ? 'color: orange; font-weight: bold;' : '';
+                    html += `<strong>${label}:</strong> <span style="${style}">${value}</span>${hasNonLatin ? ' ⚠️ Non-English' : ''}<br>`;
+                }
+            }
+            
+            // Also display namedetails if available
+            const bestResult = window.lastBestResult;
+            if (bestResult && bestResult.namedetails) {
+                html += '<h4>Name Details (Multilingual):</h4>';
+                for (const [key, value] of Object.entries(bestResult.namedetails)) {
+                    const hasNonLatin = /[^\x00-\x7F]/.test(value);
+                    const style = hasNonLatin ? 'color: orange; font-weight: bold;' : 'color: green;';
+                    html += `<strong>${key}:</strong> <span style="${style}">${value}</span>${hasNonLatin ? ' ⚠️' : ' ✅'}<br>`;
+                }
+            }
+            
+            document.getElementById('address-components').innerHTML = html;
+        }
+        
+        function formatAddress(address, nameDetails = {}) {
+            const parts = [];
+            
+            // Build street address with English preference
+            const streetParts = [];
+            if (address.house_number) streetParts.push(address.house_number);
+            
+            // Prefer English street names
+            let streetName = null;
+            if (nameDetails && nameDetails['name:en']) {
+                streetName = nameDetails['name:en'];
+            } else {
+                const candidates = [address.road, address.street, address.pedestrian, address.footway, address.path].filter(name => name);
+                streetName = candidates.find(name => /^[a-zA-Z0-9\s\-'.,]+$/.test(name)) || candidates[0];
+            }
+            
+            if (streetName) streetParts.push(streetName);
+            
+            if (streetParts.length > 0) {
+                parts.push(streetParts.join(' '));
+            }
+            
+            // Add unit/apartment if available
+            if (address.unit) {
+                parts[parts.length - 1] += ` Unit ${address.unit}`;
+            }
+            
+            // Add neighbourhood/suburb with English preference
+            let area = null;
+            if (nameDetails && (nameDetails['neighbourhood:en'] || nameDetails['suburb:en'])) {
+                area = nameDetails['neighbourhood:en'] || nameDetails['suburb:en'];
+            } else {
+                const candidates = [address.neighbourhood, address.suburb].filter(name => name);
+                area = candidates.find(name => /^[a-zA-Z0-9\s\-'.,]+$/.test(name)) || candidates[0];
+            }
+            
+            if (area && !parts.some(part => part.includes(area))) {
+                parts.push(area);
+            }
+            
+            // Add city with English preference
+            let city = null;
+            if (nameDetails && (nameDetails['city:en'] || nameDetails['town:en'])) {
+                city = nameDetails['city:en'] || nameDetails['town:en'];
+            } else {
+                const candidates = [address.city, address.town, address.municipality, address.village, address.hamlet, address.city_district, address.district].filter(name => name);
+                city = candidates.find(name => /^[a-zA-Z0-9\s\-'.,]+$/.test(name)) || candidates[0];
+            }
+            
+            if (city) {
+                parts.push(city);
+            }
+            
+            // Add state/province with postal code
+            const state = address.state || address.province || address['state_district'];
+            if (state) {
+                if (address.postcode) {
+                    parts.push(`${state} ${address.postcode}`);
+                } else {
+                    parts.push(state);
+                }
+            } else if (address.postcode) {
+                parts.push(address.postcode);
+            }
+            
+            // Add country
+            if (address.country) {
+                parts.push(address.country);
+            }
+            
+            return parts.join(', ') || 'Location found';
+        }
+        
+        function formatSimplifiedAddress(address, nameDetails = {}) {
+            const parts = [];
+            
+            // Build street address with English preference
+            const streetParts = [];
+            if (address.house_number) streetParts.push(address.house_number);
+            
+            // Prefer English street names
+            let streetName = null;
+            if (nameDetails && nameDetails['name:en']) {
+                streetName = nameDetails['name:en'];
+            } else {
+                const candidates = [address.road, address.street, address.pedestrian, address.footway, address.path].filter(name => name);
+                streetName = candidates.find(name => /^[a-zA-Z0-9\s\-'.,]+$/.test(name)) || candidates[0];
+            }
+            
+            if (streetName) streetParts.push(streetName);
+            
+            if (streetParts.length > 0) {
+                parts.push(streetParts.join(' '));
+            }
+            
+            // Add city with English preference (skip neighborhood entirely)
+            let city = null;
+            if (nameDetails && (nameDetails['city:en'] || nameDetails['town:en'])) {
+                city = nameDetails['city:en'] || nameDetails['town:en'];
+            } else {
+                const candidates = [address.city, address.town, address.municipality, address.village, address.hamlet, address.city_district, address.district].filter(name => name);
+                city = candidates.find(name => /^[a-zA-Z0-9\s\-'.,]+$/.test(name)) || candidates[0];
+            }
+            
+            if (city) {
+                parts.push(city);
+            }
+            
+            // Add state/province with postal code
+            const state = address.state || address.province || address['state_district'];
+            if (state) {
+                if (address.postcode) {
+                    parts.push(`${state} ${address.postcode}`);
+                } else {
+                    parts.push(state);
+                }
+            } else if (address.postcode) {
+                parts.push(address.postcode);
+            }
+            
+            // Add country
+            if (address.country) {
+                parts.push(address.country);
+            }
+            
+            return parts.join(', ') || 'Location found';
+        }
+    </script>
+</body>
+</html>
