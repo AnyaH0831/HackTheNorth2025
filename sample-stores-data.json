@@ -1,0 +1,232 @@
+[
+  {
+    "name": "FreshMart",
+    "address": "200 University Ave W, Waterloo, ON",
+    "phone": "(519) 888-4567",
+    "hours": "7:00 AM - 11:00 PM",
+    "lat": 43.4723,
+    "lng": -80.5449,
+    "products": [
+      {
+        "productId": "milk",
+        "name": "2% Milk (1L)",
+        "price": 3.49,
+        "brand": "Beatrice"
+      },
+      {
+        "productId": "bread",
+        "name": "Whole Wheat Bread",
+        "price": 2.99,
+        "brand": "Wonder"
+      },
+      {
+        "productId": "apples",
+        "name": "Gala Apples (1lb)",
+        "price": 2.49,
+        "brand": "Local Farm"
+      },
+      {
+        "productId": "bananas",
+        "name": "Bananas (1lb)",
+        "price": 1.29,
+        "brand": "Chiquita"
+      },
+      {
+        "productId": "eggs",
+        "name": "Large Eggs (12ct)",
+        "price": 4.99,
+        "brand": "Free Range"
+      },
+      {
+        "productId": "chicken",
+        "name": "Chicken Breast (1lb)",
+        "price": 8.99,
+        "brand": "Fresh"
+      }
+    ]
+  },
+  {
+    "name": "ValueGrocer",
+    "address": "170 University Ave W, Waterloo, ON",
+    "phone": "(519) 888-9876",
+    "hours": "8:00 AM - 10:00 PM",
+    "lat": 43.4696,
+    "lng": -80.5428,
+    "products": [
+      {
+        "productId": "milk",
+        "name": "2% Milk (1L)",
+        "price": 3.29,
+        "brand": "Natrel"
+      },
+      {
+        "productId": "bread",
+        "name": "Whole Wheat Bread",
+        "price": 2.79,
+        "brand": "Dempsters"
+      },
+      {
+        "productId": "apples",
+        "name": "Red Delicious (1lb)",
+        "price": 2.19,
+        "brand": "Ontario"
+      },
+      {
+        "productId": "bananas",
+        "name": "Bananas (1lb)",
+        "price": 1.19,
+        "brand": "Dole"
+      },
+      {
+        "productId": "eggs",
+        "name": "Large Eggs (12ct)",
+        "price": 4.79,
+        "brand": "Local Farm"
+      },
+      {
+        "productId": "pasta",
+        "name": "Spaghetti (500g)",
+        "price": 1.99,
+        "brand": "Barilla"
+      }
+    ]
+  },
+  {
+    "name": "Metro Plus",
+    "address": "550 King St N, Waterloo, ON",
+    "phone": "(519) 888-5555",
+    "hours": "6:00 AM - 12:00 AM",
+    "lat": 43.4815,
+    "lng": -80.5204,
+    "products": [
+      {
+        "productId": "milk",
+        "name": "Organic Milk (1L)",
+        "price": 4.29,
+        "brand": "Organic Valley"
+      },
+      {
+        "productId": "bread",
+        "name": "Artisan Sourdough",
+        "price": 3.99,
+        "brand": "Local Bakery"
+      },
+      {
+        "productId": "apples",
+        "name": "Honeycrisp (1lb)",
+        "price": 3.49,
+        "brand": "Premium"
+      },
+      {
+        "productId": "cheese",
+        "name": "Cheddar Cheese (200g)",
+        "price": 5.99,
+        "brand": "Black Diamond"
+      },
+      {
+        "productId": "yogurt",
+        "name": "Greek Yogurt (750g)",
+        "price": 4.49,
+        "brand": "Oikos"
+      },
+      {
+        "productId": "rice",
+        "name": "Jasmine Rice (2kg)",
+        "price": 6.99,
+        "brand": "Uncle Ben's"
+      }
+    ]
+  },
+  {
+    "name": "No Frills",
+    "address": "445 King St N, Waterloo, ON",
+    "phone": "(519) 888-3333",
+    "hours": "8:00 AM - 10:00 PM",
+    "lat": 43.4801,
+    "lng": -80.5187,
+    "products": [
+      {
+        "productId": "milk",
+        "name": "2% Milk (1L)",
+        "price": 2.99,
+        "brand": "No Name"
+      },
+      {
+        "productId": "bread",
+        "name": "White Bread",
+        "price": 1.99,
+        "brand": "No Name"
+      },
+      {
+        "productId": "bananas",
+        "name": "Bananas (1lb)",
+        "price": 0.99,
+        "brand": "Fresh"
+      },
+      {
+        "productId": "pasta",
+        "name": "Macaroni (500g)",
+        "price": 1.49,
+        "brand": "No Name"
+      },
+      {
+        "productId": "potatoes",
+        "name": "Russet Potatoes (3lb)",
+        "price": 2.99,
+        "brand": "Fresh"
+      },
+      {
+        "productId": "onions",
+        "name": "Yellow Onions (2lb)",
+        "price": 1.99,
+        "brand": "Fresh"
+      }
+    ]
+  },
+  {
+    "name": "Sobeys",
+    "address": "465 Phillip St, Waterloo, ON",
+    "phone": "(519) 888-7777",
+    "hours": "7:00 AM - 11:00 PM",
+    "lat": 43.4758,
+    "lng": -80.5320,
+    "products": [
+      {
+        "productId": "milk",
+        "name": "Lactose-Free Milk (1L)",
+        "price": 4.79,
+        "brand": "Lactantia"
+      },
+      {
+        "productId": "bread",
+        "name": "Multigrain Bread",
+        "price": 3.29,
+        "brand": "Wonder"
+      },
+      {
+        "productId": "apples",
+        "name": "Granny Smith (1lb)",
+        "price": 2.89,
+        "brand": "Fresh"
+      },
+      {
+        "productId": "chicken",
+        "name": "Organic Chicken Breast (1lb)",
+        "price": 12.99,
+        "brand": "Organic"
+      },
+      {
+        "productId": "tomatoes",
+        "name": "Roma Tomatoes (1lb)",
+        "price": 2.49,
+        "brand": "Fresh"
+      },
+      {
+        "productId": "cereal",
+        "name": "Cheerios (430g)",
+        "price": 5.99,
+        "brand": "General Mills"
+      }
+    ]
+  }
+]

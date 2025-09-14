@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Location Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .error {
+            background: #fecaca;
+            color: #dc2626;
+        }
+        .success {
+            background: #dcfce7;
+            color: #166534;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Location Test</h1>
+    
+    <button onclick="testBasicLocation()">Test Basic Geolocation</button>
+    <button onclick="testWithGeocodingCurrent()">Test Current Geocoding Function</button>
+    <button onclick="testWaterlooLocation()">Test Known Waterloo Location</button>
+    
+    <div id="result" class="result">Click a button to test...</div>
+
+    <script>
+        async function testBasicLocation() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Testing basic geolocation...';
+            
+            if ('geolocation' in navigator) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject);
+                    });
+                    
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Location found!\nLatitude: ${lat}\nLongitude: ${lng}`;
+                    
+                } catch (error) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Geolocation failed: ${error.message}`;
+                }
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Geolocation not supported';
+            }
+        }
+        
+        async function testWithGeocodingCurrent() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Testing with current geocoding function...';
+            
+            if ('geolocation' in navigator) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject);
+                    });
+                    
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    resultDiv.textContent = `Location found: ${lat}, ${lng}\nTesting geocoding...`;
+                    
+                    // Test the geocoding
+                    const address = await testReverseGeocode(lat, lng);
+                    
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Success!\nCoordinates: ${lat}, ${lng}\nAddress: ${address}`;
+                    
+                } catch (error) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Error: ${error.message}`;
+                }
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Geolocation not supported';
+            }
+        }
+        
+        async function testWaterlooLocation() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Testing with known Waterloo coordinates...';
+            
+            try {
+                const lat = 43.4723;
+                const lng = -80.5449;
+                
+                const address = await testReverseGeocode(lat, lng);
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Waterloo Test Success!\nCoordinates: ${lat}, ${lng}\nAddress: ${address}`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Waterloo Test Failed: ${error.message}`;
+            }
+        }
+        
+        async function testReverseGeocode(lat, lng) {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=16&accept-language=en`;
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Raw geocoding data:', data);
+            
+            if (!data || !data.address) {
+                throw new Error('No address data received');
+            }
+            
+            // Simple address formatting
+            const address = data.address;
+            const parts = [];
+            
+            // Street
+            if (address.house_number && address.road) {
+                parts.push(`${address.house_number} ${address.road}`);
+            } else if (address.road) {
+                parts.push(address.road);
+            }
+            
+            // City
+            const city = address.city || address.town || address.municipality || address.village;
+            if (city) {
+                parts.push(city);
+            }
+            
+            // State
+            if (address.state) {
+                parts.push(address.state);
+            }
+            
+            // Country
+            if (address.country) {
+                parts.push(address.country);
+            }
+            
+            return parts.join(', ') || 'Address found';
+        }
+    </script>
+</body>
+</html>
